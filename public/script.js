@@ -4,9 +4,8 @@ const animeDetails = document.getElementById('anime-details');
 const animeTitle = document.getElementById('anime-title');
 const episodeList = document.getElementById('episode-list');
 const videoPlayer = document.getElementById('video-player');
-const searchBar = document.getElementById('search-bar');
 
-// Fetch and display anime list
+// Fetch top 10 anime
 async function loadAnimeList() {
   try {
     const response = await axios.get(`${API_URL}/api/top-ten`);
@@ -19,31 +18,9 @@ async function loadAnimeList() {
     `).join('');
   } catch (error) {
     console.error('Error fetching anime list:', error);
-    animeList.innerHTML = '<p>Error loading anime list.</p>';
+    alert('Failed to load anime list. Check API status.');
   }
 }
-
-// Search anime
-searchBar.addEventListener('input', async (e) => {
-  const query = e.target.value.trim();
-  if (query.length < 3) {
-    loadAnimeList();
-    return;
-  }
-  try {
-    const response = await axios.get(`${API_URL}/api/search?keyword=${encodeURIComponent(query)}`);
-    const animes = response.data.results;
-    animeList.innerHTML = animes.map(anime => `
-      <div class="anime-card" onclick="loadAnimeDetails('${anime.id}')">
-        <img src="${anime.poster}" alt="${anime.title}">
-        <p>${anime.title}</p>
-      </div>
-    `).join('');
-  } catch (error) {
-    console.error('Error searching anime:', error);
-    animeList.innerHTML = '<p>No results found.</p>';
-  }
-});
 
 // Fetch anime details and episodes
 async function loadAnimeDetails(animeId) {
@@ -63,7 +40,6 @@ async function loadAnimeDetails(animeId) {
     `).join('');
   } catch (error) {
     console.error('Error fetching anime details:', error);
-    animeDetails.innerHTML = '<p>Error loading details.</p>';
   }
 }
 
@@ -88,25 +64,23 @@ async function loadStream(animeId, episodeId, type) {
       });
     }
     videoPlayer.play();
-  } catch (error) {
-    console.error('Error fetching stream:', error);
-    // Fallback to another server
-    try {
+    
+    // Fallback for hd-2 issues
+    if (!streamingLink) {
       const serversResponse = await axios.get(`${API_URL}/api/servers/${animeId}?ep=${episodeId}`);
       const servers = serversResponse.data.results;
-      const fallbackServer = servers.find(s => s.serverName !== 'hd-2')?.serverName;
+      const fallbackServer = servers.find(s => s.serverName !== 'hd-2')?.serverName || servers[0]?.serverName;
       if (fallbackServer) {
         const fallbackResponse = await axios.get(`${API_URL}/api/stream?id=${animeId}&ep=${episodeId}&server=${fallbackServer}&type=${type.toLowerCase()}`);
-        const streamingLink = fallbackResponse.data.results.streamingLink[0].link.file;
-        videoPlayer.src = streamingLink;
+        videoPlayer.src = fallbackResponse.data.results.streamingLink[0].link.file;
         videoPlayer.play();
       } else {
-        alert('No available servers.');
+        alert('No streaming servers available.');
       }
-    } catch (fallbackError) {
-      console.error('Error with fallback server:', fallbackError);
-      alert('Streaming unavailable. Try another episode.');
     }
+  } catch (error) {
+    console.error('Error fetching stream:', error);
+    alert('Streaming unavailable. Try another server.');
   }
 }
 
