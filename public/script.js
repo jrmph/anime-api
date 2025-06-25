@@ -27,7 +27,7 @@ async function fetchWithErrorHandling(url) {
     return response;
   } catch (error) {
     const message = error.response ?
-      `HTTP ${error.response.status}: ${error.message}` :
+      `HTTP ${error.response.status}: ${error.message} - ${JSON.stringify(error.response.data)}` :
       `Network error: ${error.message}`;
     throw new Error(message);
   }
@@ -65,7 +65,7 @@ async function loadAnimeList() {
       </div>
     `).join('');
   } catch (error) {
-    animeList.innerHTML = `<p class="error col-12">Failed to load anime list: ${error.message}. Check API status.</p>`;
+    animeList.innerHTML = `<p class="error col-12">Failed to load anime list: ${error.message}. Please check if the API is running and CORS is configured correctly.</p>`;
     console.error('Anime list error:', error.message);
   }
 }
