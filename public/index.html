@@ -5,17 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anime API Tester</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #output { margin-top: 20px; border: 1px solid #ccc; padding: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #output {
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 200px;
+            overflow-x: auto;
+        }
+        #videoPlayer {
+            margin-top: 20px;
+            display: none;
+            width: 100%;
+            max-width: 600px;
+        }
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body>
-    <h1>Anime API Tester</h1>
-    <button onclick="fetchCharacter()">Get Character (Asta)</button>
-    <button onclick="fetchAnimeInfo()">Get Anime Info (Yami Shibai 9)</button>
-    <button onclick="fetchStream()">Get Stream (HD-2, Steins;Gate)</button>
-    <div id="output">Results will appear here...</div>
+    <div class="container">
+        <h1>Anime API Tester (HD-2 Server)</h1>
+        <div class="button-group">
+            <button onclick="fetchCharacter()">Get Character (Asta)</button>
+            <button onclick="fetchActor()">Get Voice Actor (Gakuto Kajiwara)</button>
+            <button onclick="fetchAnimeInfo()">Get Anime Info (Yami Shibai 9)</button>
+            <button onclick="fetchStream()">Get Stream (HD-2, Steins;Gate)</button>
+        </div>
+        <div id="output">Results will appear here...</div>
+        <video id="videoPlayer" controls>
+            <source id="videoSource" src="" type="application/x-mpegURL">
+            Your browser does not support the video tag.
+        </video>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script>
         const apiBaseUrl = 'http://localhost:3000'; // Replace with your API URL (e.g., Render-hosted URL)
 
@@ -23,9 +77,19 @@
             try {
                 const response = await fetch(`${apiBaseUrl}/api/character/asta-340`);
                 const data = await response.json();
-                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                displayResult(data, 'Character Data');
             } catch (error) {
-                document.getElementById('output').innerHTML = `Error: ${error.message}`;
+                displayError(error.message);
+            }
+        }
+
+        async function fetchActor() {
+            try {
+                const response = await fetch(`${apiBaseUrl}/api/actors/gakuto-kajiwara-534`);
+                const data = await response.json();
+                displayResult(data, 'Voice Actor Data');
+            } catch (error) {
+                displayError(error.message);
             }
         }
 
@@ -33,9 +97,9 @@
             try {
                 const response = await fetch(`${apiBaseUrl}/api/info?id=yami-shibai-9-17879`);
                 const data = await response.json();
-                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                displayResult(data, 'Anime Info');
             } catch (error) {
-                document.getElementById('output').innerHTML = `Error: ${error.message}`;
+                displayError(error.message);
             }
         }
 
@@ -43,9 +107,45 @@
             try {
                 const response = await fetch(`${apiBaseUrl}/api/v1/stream?server=HD-2&type=dub&id=/watch/steinsgate-3?ep=214`);
                 const data = await response.json();
-                document.getElementById('output').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                if (data.success && data.data.streamingLink?.link?.file) {
+                    displayResult(data, 'Streaming Data');
+                    playStream(data.data.streamingLink.link.file);
+                } else {
+                    displayError('No streaming link found');
+                }
             } catch (error) {
-                document.getElementById('output').innerHTML = `Error: ${error.message}`;
+                displayError(error.message);
+            }
+        }
+
+        function displayResult(data, title) {
+            const output = document.getElementById('output');
+            output.innerHTML = `<h3>${title}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+
+        function displayError(message) {
+            const output = document.getElementById('output');
+            output.innerHTML = `<p class="error">Error: ${message}</p>`;
+        }
+
+        function playStream(streamUrl) {
+            const video = document.getElementById('videoPlayer');
+            const videoSource = document.getElementById('videoSource');
+            video.style.display = 'block';
+
+            if (Hls.isSupported()) {
+                const hls = new Hls();
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    video.play();
+                });
+            } else if (video.canPlayType('application/x-mpegURL')) {
+                videoSource.src = streamUrl;
+                video.load();
+                video.play();
+            } else {
+                displayError('HLS is not supported in this browser');
             }
         }
     </script>
