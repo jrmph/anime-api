@@ -8,10 +8,13 @@
 </head>
 <body>
   <h1>Anime Streaming Site</h1>
+  <input type="text" id="search-input" placeholder="Search anime...">
+  <button onclick="searchAnime()">Search</button>
   <div id="anime-list"></div>
   <div id="anime-details" style="display:none;">
     <h2 id="anime-title"></h2>
     <div id="episode-list"></div>
+    <select id="server-select" onchange="changeServer()"></select>
     <video id="video-player" controls style="width:100%; max-width:800px;"></video>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

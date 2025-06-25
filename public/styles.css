@@ -1,5 +1,8 @@
 body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+#search-input { padding: 5px; margin-right: 10px; }
 #anime-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .anime-card { cursor: pointer; }
 .anime-card img { width: 100%; }
 .episode-button { margin: 5px; padding: 5px 10px; cursor: pointer; }
+#server-select { margin: 10px 0; padding: 5px; }
+.error { color: red; }
